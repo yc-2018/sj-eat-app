@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="screen_background">#F1F1F1</color>
+    <color name="label_text">#1F1F1F</color>
+    <color name="body_text">#5C5C5C</color>
+</resources>
