@@ -2,6 +2,11 @@ name: 打包安卓应用
 
 on:
   workflow_dispatch:
+    inputs:
+      qr_label:
+        description: 临时二维码编号，留空则使用 gradle.properties 里的默认值
+        required: false
+        type: string
   push:
     branches:
       - main
@@ -44,40 +49,66 @@ jobs:
       - name: 授予 Gradle Wrapper 执行权限
         run: chmod +x gradlew
 
-      - name: 构建 Debug APK
-        run: ./gradlew --no-daemon assembleDebug
-
       - name: 生成发行版信息
         id: release_meta
         shell: bash
         run: |
-          qr_label=$(grep '^qrLabel=' gradle.properties | cut -d= -f2- || true)
+          manual_qr_label="${{ github.event.inputs.qr_label }}"
+          qr_label=$(grep '^qrLabel=' gradle.properties | cut -d= -f2- | tr -d '\r' || true)
+          if [ -n "$manual_qr_label" ]; then
+            qr_label="$manual_qr_label"
+          fi
           if [ -z "$qr_label" ]; then
             qr_label="E0254"
           fi
-          timestamp=$(date -u +"%Y%m%d-%H%M%S")
+          app_version=$(grep -m1 "versionName " app/build.gradle | sed -E "s/.*versionName ['\"]([^'\"]+)['\"].*/\1/" | tr -d '\r')
+          if [ -z "$app_version" ]; then
+            app_version="1.0"
+          fi
+          timestamp=$(TZ=Asia/Shanghai date +"%Y-%m-%d_%H-%M-%S")
+          timestamp_tag=$(TZ=Asia/Shanghai date +"%Y%m%d-%H%M%S")
+          release_time=$(TZ=Asia/Shanghai date +"%Y-%m-%d %H:%M:%S CST")
           short_sha="${GITHUB_SHA::7}"
+          tag_label=$(printf '%s' "$qr_label" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9._-]+/-/g; s/^-+//; s/-+$//')
+          if [ -z "$tag_label" ]; then
+            tag_label="$short_sha"
+          fi
+          app_title="[$qr_label]吃饭啦"
+          artifact_name="${app_title}-v${app_version}-${timestamp}-Debug安装包"
+          release_name="${app_title} v${app_version} ${timestamp}"
+          tag_name="build-${tag_label}-v${app_version}-${timestamp_tag}-${short_sha}"
+          echo "QR_LABEL=$qr_label" >> "$GITHUB_ENV"
           echo "qr_label=$qr_label" >> "$GITHUB_OUTPUT"
+          echo "app_version=$app_version" >> "$GITHUB_OUTPUT"
           echo "timestamp=$timestamp" >> "$GITHUB_OUTPUT"
+          echo "release_time=$release_time" >> "$GITHUB_OUTPUT"
           echo "short_sha=$short_sha" >> "$GITHUB_OUTPUT"
+          echo "artifact_name=$artifact_name" >> "$GITHUB_OUTPUT"
+          echo "release_name=$release_name" >> "$GITHUB_OUTPUT"
+          echo "tag_name=$tag_name" >> "$GITHUB_OUTPUT"
+
+      - name: 构建 Debug APK
+        run: ./gradlew --no-daemon assembleDebug -PqrLabel="$QR_LABEL"
 
       - name: 上传 APK 构建产物
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ steps.release_meta.outputs.qr_label }}-安卓调试安装包
+          name: ${{ steps.release_meta.outputs.artifact_name }}
           path: app/build/outputs/apk/debug/app-debug.apk
 
       - name: 发布到 GitHub 发行版
         uses: softprops/action-gh-release@v2.6.2
         with:
-          tag_name: build-${{ steps.release_meta.outputs.qr_label }}-${{ steps.release_meta.outputs.timestamp }}-${{ steps.release_meta.outputs.short_sha }}
+          tag_name: ${{ steps.release_meta.outputs.tag_name }}
           target_commitish: ${{ github.sha }}
-          name: ${{ steps.release_meta.outputs.qr_label }} 调试安装包 ${{ steps.release_meta.outputs.timestamp }}
+          name: ${{ steps.release_meta.outputs.release_name }}
           body: |
             为 ${{ steps.release_meta.outputs.qr_label }} 专门打造的自动打包 Debug APK。
+            应用名称：${{ steps.release_meta.outputs.release_name }}
+            应用版本：v${{ steps.release_meta.outputs.app_version }}
             分支：${{ github.ref_name }}
             提交：${{ github.sha }}
-            构建时间：${{ steps.release_meta.outputs.timestamp }} UTC
+            构建时间：${{ steps.release_meta.outputs.release_time }}
           files: app/build/outputs/apk/debug/app-debug.apk
           prerelease: true
           make_latest: false
