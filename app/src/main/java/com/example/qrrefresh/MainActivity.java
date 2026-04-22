@@ -26,7 +26,7 @@ public class MainActivity extends Activity {
     private static final String PREFIX = LABEL + "|";
     private static final int QR_SIZE = 720;
 
-    private final SimpleDateFormat formatter = new SimpleDateFormat("yyyy/M/d H:mm:ss", Locale.US);
+    private final SimpleDateFormat formatter = new SimpleDateFormat("yyyy/M/d HH:mm:ss", Locale.US);
 
     private ImageView qrImageView;
     private TextView codeLabelView;
