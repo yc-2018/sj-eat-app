@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -40,20 +41,29 @@ public class MainActivity extends Activity {
         codeLabelView = findViewById(R.id.code_label);
         contentView = findViewById(R.id.code_content);
         codeLabelView.setText(LABEL);
+        qrImageView.setLayerType(View.LAYER_TYPE_SOFTWARE, null);
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        refreshQrCode();
+        if (qrImageView.getWidth() > 0 && qrImageView.getHeight() > 0) {
+            refreshQrCode();
+        } else {
+            qrImageView.post(this::refreshQrCode);
+        }
     }
 
     private void refreshQrCode() {
         String content = PREFIX + formatter.format(new Date());
         contentView.setText(content);
+        int size = Math.max(qrImageView.getWidth(), qrImageView.getHeight());
+        if (size <= 0) {
+            size = QR_SIZE;
+        }
 
         try {
-            qrImageView.setImageBitmap(createQrBitmap(content, QR_SIZE));
+            qrImageView.setImageBitmap(createQrBitmap(content, size));
         } catch (WriterException exception) {
             qrImageView.setImageDrawable(null);
             contentView.setText(R.string.qr_error);
@@ -62,9 +72,8 @@ public class MainActivity extends Activity {
 
     private Bitmap createQrBitmap(String content, int size) throws WriterException {
         Map<EncodeHintType, Object> hints = new EnumMap<>(EncodeHintType.class);
-        hints.put(EncodeHintType.CHARACTER_SET, "UTF-8");
-        hints.put(EncodeHintType.ERROR_CORRECTION, ErrorCorrectionLevel.M);
-        hints.put(EncodeHintType.MARGIN, 1);
+        hints.put(EncodeHintType.ERROR_CORRECTION, ErrorCorrectionLevel.L);
+        hints.put(EncodeHintType.MARGIN, 4);
 
         BitMatrix bitMatrix = new QRCodeWriter().encode(content, BarcodeFormat.QR_CODE, size, size, hints);
         Bitmap bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888);
