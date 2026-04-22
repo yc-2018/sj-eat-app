@@ -2,6 +2,7 @@ apply plugin: 'com.android.application'
 
 def qrLabel = (project.findProperty('qrLabel') ?: 'E0254').toString()
 def escapedQrLabel = qrLabel.replace('\\', '\\\\').replace('"', '\\"')
+def showQrDetails = (project.findProperty('showQrDetails') ?: 'true').toString().toBoolean()
 
 android {
     compileSdkVersion 29
@@ -14,6 +15,7 @@ android {
         versionCode 1
         versionName '1.0'
         buildConfigField 'String', 'QR_LABEL', '"' + escapedQrLabel + '"'
+        buildConfigField 'boolean', 'SHOW_QR_DETAILS', showQrDetails.toString()
         resValue 'string', 'app_name', '"[' + escapedQrLabel + ']吃饭啦"'
     }
 

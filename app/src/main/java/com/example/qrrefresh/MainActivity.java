@@ -41,6 +41,7 @@ public class MainActivity extends Activity {
         codeLabelView = findViewById(R.id.code_label);
         contentView = findViewById(R.id.code_content);
         codeLabelView.setText(LABEL);
+        contentView.setVisibility(BuildConfig.SHOW_QR_DETAILS ? View.VISIBLE : View.GONE);
         qrImageView.setLayerType(View.LAYER_TYPE_SOFTWARE, null);
     }
 
