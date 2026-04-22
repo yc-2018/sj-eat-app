@@ -75,8 +75,8 @@ jobs:
           fi
           app_title="[$qr_label]吃饭啦"
           artifact_name="${app_title}-v${app_version}-${timestamp}-Debug安装包"
-          release_name="${app_title} v${app_version} ${timestamp}"
-          tag_name="build-${tag_label}-v${app_version}-${timestamp_tag}-${short_sha}"
+          release_name="${app_title} 最新调试安装包"
+          tag_name="build-${tag_label}"
           echo "QR_LABEL=$qr_label" >> "$GITHUB_ENV"
           echo "qr_label=$qr_label" >> "$GITHUB_OUTPUT"
           echo "app_version=$app_version" >> "$GITHUB_OUTPUT"
@@ -112,3 +112,4 @@ jobs:
           files: app/build/outputs/apk/debug/app-debug.apk
           prerelease: true
           make_latest: false
+          overwrite_files: true
