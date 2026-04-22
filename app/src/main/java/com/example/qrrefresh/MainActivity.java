@@ -22,8 +22,8 @@ import java.util.Locale;
 import java.util.Map;
 
 public class MainActivity extends Activity {
-    private static final String PREFIX = "E0254|";
-    private static final String LABEL = "E0254";
+    private static final String LABEL = BuildConfig.QR_LABEL;
+    private static final String PREFIX = LABEL + "|";
     private static final int QR_SIZE = 720;
 
     private final SimpleDateFormat formatter = new SimpleDateFormat("yyyy/M/d H:mm:ss", Locale.US);

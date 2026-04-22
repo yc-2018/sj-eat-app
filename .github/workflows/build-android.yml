@@ -47,23 +47,37 @@ jobs:
       - name: 构建 Debug APK
         run: ./gradlew --no-daemon assembleDebug
 
+      - name: 生成发行版信息
+        id: release_meta
+        shell: bash
+        run: |
+          qr_label=$(grep '^qrLabel=' gradle.properties | cut -d= -f2- || true)
+          if [ -z "$qr_label" ]; then
+            qr_label="E0254"
+          fi
+          timestamp=$(date -u +"%Y%m%d-%H%M%S")
+          short_sha="${GITHUB_SHA::7}"
+          echo "qr_label=$qr_label" >> "$GITHUB_OUTPUT"
+          echo "timestamp=$timestamp" >> "$GITHUB_OUTPUT"
+          echo "short_sha=$short_sha" >> "$GITHUB_OUTPUT"
+
       - name: 上传 APK 构建产物
         uses: actions/upload-artifact@v4
         with:
-          name: 安卓调试安装包
+          name: ${{ steps.release_meta.outputs.qr_label }}-安卓调试安装包
           path: app/build/outputs/apk/debug/app-debug.apk
 
       - name: 发布到 GitHub 发行版
         uses: softprops/action-gh-release@v2.6.2
         with:
-          tag_name: latest-build
+          tag_name: build-${{ steps.release_meta.outputs.qr_label }}-${{ steps.release_meta.outputs.timestamp }}-${{ steps.release_meta.outputs.short_sha }}
           target_commitish: ${{ github.sha }}
-          name: 最新调试安装包
+          name: ${{ steps.release_meta.outputs.qr_label }} 调试安装包 ${{ steps.release_meta.outputs.timestamp }}
           body: |
-            自动打包生成的 Debug APK。
+            为 ${{ steps.release_meta.outputs.qr_label }} 专门打造的自动打包 Debug APK。
             分支：${{ github.ref_name }}
             提交：${{ github.sha }}
+            构建时间：${{ steps.release_meta.outputs.timestamp }} UTC
           files: app/build/outputs/apk/debug/app-debug.apk
           prerelease: true
           make_latest: false
-          overwrite_files: true
