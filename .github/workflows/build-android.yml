@@ -15,11 +15,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v5
 
-      - name: Set up Java 11
+      - name: Set up Java 17 for Android SDK tools
         uses: actions/setup-java@v5
         with:
           distribution: temurin
-          java-version: '11'
+          java-version: '17'
           cache: gradle
 
       - name: Set up Android SDK tools
@@ -30,6 +30,13 @@ jobs:
 
       - name: Install Android SDK packages
         run: sdkmanager "platforms;android-29" "build-tools;29.0.3" "platform-tools"
+
+      - name: Switch to Java 11 for Gradle build
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '11'
+          cache: gradle
 
       - name: Make Gradle wrapper executable
         run: chmod +x gradlew
